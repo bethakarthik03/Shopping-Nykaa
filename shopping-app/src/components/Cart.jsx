@@ -7,10 +7,10 @@ import { useCartlist } from "./CartlistContext";
 import logo from "../Assets/Nykaalogo.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { createOrder } from "../api/orderApi";
+
 const Cart = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, login, logout } = useAuth();
   const { wishlistItems } = useWishlist();
   const { cartlistItems, removeFromCartlist, updateQuantity, clearCart, getTotalPrice } = useCartlist();
 
@@ -23,6 +23,16 @@ const Cart = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  const handleLogin = () => {
+    login();
+    navigate("/");
+  };
 
   const wishlistCount = wishlistItems.length;
   const cartlistCount = cartlistItems.length;
@@ -50,7 +60,7 @@ const Cart = () => {
       toast.success("Cart cleared");
     }
   };
-  // Checkout → Backend order create
+  // Checkout → Navigate to checkout without creating order
   const handleCheckout = async () => {
     if (cartlistItems.length === 0) {
       toast.error("Your cart is empty!");
@@ -77,19 +87,12 @@ const Cart = () => {
       phone: "9999999999",
     };
     try {
-      const res = await createOrder({ items, total, shippingDetails });
-      const orderId = res?.data?.order?._id || res?.data?.orderId;
-
-      if (!orderId) {
-        throw new Error("Order creation failed");
-      }
-
       navigate("/checkout", {
-        state: { orderId, items, total, shippingDetails },
+        state: { items, total, shippingDetails },
       });
     } catch (err) {
       console.log("CHECKOUT ERROR:", err);
-      toast.error("Failed to create order. Please try again.");
+      toast.error("Failed to proceed to checkout. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -98,44 +101,162 @@ const Cart = () => {
   return (
     <div>
       <ToastContainer theme="colored" />
-      {/* Navbar */}
-      <div className="navbar-responsive">
-        <div className="nav-left-responsive">
-          <img src={logo} alt="logo" className="nav-logo-responsive" onClick={() => navigate("/home")} />
-          <button className="hamburger-button-responsive" onClick={() => setMenuOpen(!menuOpen)}>
+      {/* Navbar with responsiveness */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: windowWidth < 768 ? '8px 10px' : '8px 20px',
+        backgroundColor: '#0077b6',
+        color: '#fff',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000,
+        gap: windowWidth < 768 ? '8px' : '12px',
+        flexWrap: 'wrap',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src={logo} alt="logo" style={{ width: windowWidth < 768 ? '60px' : '80px', height: 'auto', borderRadius: '10px', cursor: 'pointer' }} onClick={() => navigate("/home")} />
+          <button style={{ background: 'none', border: 'none', fontSize: '20px', color: 'white', cursor: 'pointer' }} onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <FaTimes /> : <FaBars />}
           </button>
         </div>
-        <nav>
-          <div className={`side-menu-responsive ${menuOpen ? "side-menu-open" : ""}`}>
-            <div
-              style={{ color: "#fff", fontSize: "24px", cursor: "pointer", textAlign: "center" }}
-              onClick={() => {
-                navigate("/home");
-                setMenuOpen(false);
-              }}
-            >
-              Home
-            </div>
+        <nav style={{
+          position: 'fixed',
+          top: 0,
+          left: menuOpen ? '0' : '-270px',
+          width: '250px',
+          height: '100vh',
+          backgroundColor: '#0077b6',
+          paddingTop: '70px',
+          paddingLeft: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          transition: 'left 0.3s ease-in-out',
+          zIndex: 1001,
+        }}>
+          <div
+            style={{
+              color: '#fff',
+              fontSize: windowWidth < 768 ? '18px' : '22px',
+              cursor: 'pointer',
+              textAlign: 'center',
+              listStyle: 'none',
+            }}
+            onClick={() => {
+              navigate("/home");
+              setMenuOpen(false);
+            }}
+          >
+            Home
           </div>
-          {menuOpen && <div className="overlay-responsive" onClick={() => setMenuOpen(false)}></div>}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                style={{
+                  backgroundColor: "#fff",
+                  color: "#0077b6",
+                  border: "none",
+                  padding: windowWidth < 768 ? '8px' : '10px',
+                  borderRadius: '5px',
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  margin: '5px 0',
+                }}
+              >
+                Logout
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleLogin}
+                  style={{
+                    backgroundColor: "#fff",
+                    color: "#0077b6",
+                    border: "none",
+                    padding: windowWidth < 768 ? '8px' : '10px',
+                    borderRadius: '5px',
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    margin: '5px 0',
+                  }}
+                >
+                  Login
+                </button>
+
+                <button
+                  onClick={() => navigate("/signup")}
+                  style={{
+                    backgroundColor: "#ffd166",
+                    color: "black",
+                    border: "none",
+                    padding: windowWidth < 768 ? '8px' : '10px',
+                    borderRadius: '5px',
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    margin: '5px 0',
+                  }}
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
+          </div>
         </nav>
-        <div className="nav-search-responsive">
-          <input type="text" placeholder="search products..." className="nav-search-input" />
-          <FaSearch style={{ color: "#0077b6" }} />
+
+        {menuOpen && <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 1000,
+        }} onClick={() => setMenuOpen(false)}></div>}
+
+        <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+          <input type="text" placeholder="search products..." style={{
+            padding: '8px 40px 8px 12px',
+            borderRadius: '20px',
+            border: 'none',
+            outline: 'none',
+            width: windowWidth < 768 ? '150px' : '200px',
+          }} />
+          <FaSearch style={{ position: 'absolute', right: '10px', color: '#0077b6', cursor: 'pointer' }} />
         </div>
-        <div className="nav-buttons-responsive">
-          <div className="nav-icon-responsive" onClick={() => navigate("/wishlist")}>
-            <FaHeart style={{ fontSize: "20px", color: "white" }} />
-            <span className="nav-icon-badge">{wishlistCount}</span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: windowWidth < 768 ? '10px' : '15px' }}>
+          <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => navigate("/wishlist")}>
+            <FaHeart style={{ fontSize: windowWidth < 768 ? '20px' : '24px', color: '#fff' }} />
+            <span style={{
+              position: 'absolute',
+              top: '-10px',
+              right: '-10px',
+              backgroundColor: 'red',
+              color: 'white',
+              borderRadius: '50%',
+              padding: '2px 6px',
+              fontSize: '12px',
+            }}>{wishlistCount}</span>
           </div>
-          <div className="nav-icon-responsive" onClick={() => navigate("/cart")}>
-            <FaShoppingBag style={{ fontSize: "20px", color: "white" }} />
-            <span className="nav-icon-badge">{cartlistCount}</span>
+          <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => navigate("/cart")}>
+            <FaShoppingBag style={{ fontSize: windowWidth < 768 ? '20px' : '24px', color: '#fff' }} />
+            <span style={{
+              position: 'absolute',
+              top: '-10px',
+              right: '-10px',
+              backgroundColor: 'red',
+              color: 'white',
+              borderRadius: '50%',
+              padding: '2px 6px',
+              fontSize: '12px',
+            }}>{cartlistCount}</span>
           </div>
-          <div className="nav-icon-responsive" onClick={() => navigate("/orders")}>
-            <FaClipboardList style={{ fontSize: "20px", color: "white" }} />
-            
+          <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => navigate("/orders")}>
+            <FaClipboardList style={{ fontSize: windowWidth < 768 ? '20px' : '24px', color: '#fff' }} />
           </div>
         </div>
       </div>

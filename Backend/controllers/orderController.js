@@ -5,9 +5,9 @@ import mongoose from "mongoose";
 export const createOrder = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { items, total, shippingDetails } = req.body;
+    const { items, total, shippingDetails, payment } = req.body;
 
-    console.log("Received order data:", { userId, items, total, shippingDetails });
+    console.log("Received order data:", { userId, items, total, shippingDetails, payment });
 
     if (!userId) {
       return res.status(401).json({ message: "User not authenticated" });
@@ -43,6 +43,8 @@ export const createOrder = async (req, res) => {
       items: processedItems,
       total,
       shippingDetails,
+      payment: payment || { paid: false },
+      status: payment?.paid ? "paid" : "created",
     });
 
     console.log("Saving order...");

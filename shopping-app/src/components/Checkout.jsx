@@ -8,7 +8,7 @@ import logo from "../Assets/Nykaalogo.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { updatePaymentStatus } from "../api/orderApi";
+import { createOrder } from "../api/orderApi";
 
 // Responsive hook
 const useResponsiveStyles = () => {
@@ -38,7 +38,6 @@ const Checkout = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const orderId = location.state?.orderId;
   const items = useMemo(() => location.state?.items || [], [location.state?.items]);
   const total = location.state?.total || 0;
   const shippingDetails = location.state?.shippingDetails || {};
@@ -49,12 +48,12 @@ const Checkout = () => {
       navigate("/login");
       return;
     }
-    if (!orderId || items.length === 0) {
-      toast.error("No order found!");
+    if (items.length === 0) {
+      toast.error("No items found!");
       navigate("/cart");
       return;
     }
-  }, [isAuthenticated, orderId, items, navigate]);
+  }, [isAuthenticated, items, navigate]);
 
   const wishlistCount = wishlistItems.length;
   const cartlistCount = cartlistItems.length;
@@ -85,10 +84,20 @@ const Checkout = () => {
 
       handler: async function (response) {
         try {
-          await updatePaymentStatus(orderId, {
-            paymentId: response.razorpay_payment_id,
-            paid: true,
-          });
+          // Create order with payment details after successful payment
+          const orderData = {
+            items: items,
+            total: total,
+            shippingDetails: shippingDetails,
+            payment: {
+              paymentId: response.razorpay_payment_id,
+              paid: true,
+              paidAt: new Date(),
+            },
+          };
+
+          const res = await createOrder(orderData);
+          const order = res.data.order;
 
           toast.success("Payment Successful!");
           clearCart();
@@ -96,18 +105,13 @@ const Checkout = () => {
           // Navigate to order confirmation with order details
           navigate("/order-confirmation", {
             state: {
-              orderData: {
-                _id: orderId,
-                items: items,
-                total: total,
-                shippingDetails: shippingDetails,
-                status: "Paid",
-              },
+              orderData: order,
               paymentId: response.razorpay_payment_id,
             },
           });
         } catch (error) {
-          toast.error("Payment successful but failed to update order!");
+          console.error("Error creating order after payment:", error);
+          toast.error("Payment successful but failed to create order!");
         } finally {
           setIsProcessing(false);
         }

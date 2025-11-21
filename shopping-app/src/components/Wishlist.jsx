@@ -201,36 +201,58 @@ const Wishlist = () => {
       <div className="wishlist-content-responsive">
         <h2 className="wishlist-title-responsive">Your WishList</h2>
 
-        <div className="wishlist-grid-responsive">
-          {wishlistItems.map((item) => (
-            <div key={`${item.id}-${item.selectedSize}`} className="wishlist-item-responsive">
-              <img src={item.img} alt={item.name} className="wishlist-item-img" />
+        {wishlistItems.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "50px 20px" }}>
+            <FaHeart size={80} color="#ccc" />
+            <h3 style={{ color: "#666", marginTop: "20px" }}>Your wishlist is empty</h3>
+            <p style={{ color: "#999", marginBottom: "30px" }}>Add some items to get started!</p>
+            <button
+              onClick={() => navigate("/home")}
+              style={{
+                background: "#0077b6",
+                color: "white",
+                padding: "12px 30px",
+                borderRadius: "25px",
+                border: "none",
+                fontSize: "16px",
+                cursor: "pointer",
+              }}
+            >
+              Continue Shopping
+            </button>
+          </div>
+        ) : (
+          <div className="wishlist-grid-responsive">
+            {wishlistItems.map((item) => (
+              <div key={`${item.id}-${item.selectedSize}`} className="wishlist-item-responsive">
+                <img src={item.img} alt={item.name} className="wishlist-item-img" />
 
-              <h3 className="wishlist-item-name">{item.name}</h3>
-              <p className="wishlist-item-size">Size: {item.selectedSize}</p>
+                <h3 className="wishlist-item-name">{item.name}</h3>
+                <p className="wishlist-item-size">Size: {item.selectedSize}</p>
 
-              <button
-                className="wishlist-item-btn"
-                style={{ backgroundColor: "black", color: "white" }}
-                onClick={() => {
-                  addToCartlist(item);
-                  removeFromWishlist(item.id);
-                  navigate("/cart");
-                }}
-              >
-                Move to Cart
-              </button>
+                <button
+                  className="wishlist-item-btn"
+                  style={{ backgroundColor: "black", color: "white" }}
+                  onClick={() => {
+                    addToCartlist(item);
+                    removeFromWishlist(item.id);
+                    navigate("/cart");
+                  }}
+                >
+                  Move to Cart
+                </button>
 
-              <button
-                className="wishlist-item-btn"
-                style={{ backgroundColor: "#ff4b4b", color: "white" }}
-                onClick={() => removeFromWishlist(item.id)}
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
+                <button
+                  className="wishlist-item-btn"
+                  style={{ backgroundColor: "#ff4b4b", color: "white" }}
+                  onClick={() => removeFromWishlist(item.id)}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
